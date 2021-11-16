@@ -2,6 +2,7 @@ package drivers
 
 import (
 	"github.com/porter-dev/switchboard/internal/models"
+	"github.com/porter-dev/switchboard/internal/query"
 )
 
 type SharedDriverOpts struct {
@@ -22,4 +23,26 @@ type Driver interface {
 
 	// Output returns output data from the resource.
 	Output() (map[string]interface{}, error)
+}
+
+type ConstructConfigOpts struct {
+	RawConf      map[string]interface{}
+	LookupTable  map[string]Driver
+	Dependencies []string
+}
+
+func ConstructConfig(opts *ConstructConfigOpts) (map[string]interface{}, error) {
+	dataMap := make(map[string]interface{})
+
+	for _, dependency := range opts.Dependencies {
+		depOutput, err := opts.LookupTable[dependency].Output()
+
+		if err != nil {
+			return nil, err
+		}
+
+		dataMap[dependency] = depOutput
+	}
+
+	return query.PopulateQueries(opts.RawConf, dataMap)
 }

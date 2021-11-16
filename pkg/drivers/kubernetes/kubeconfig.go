@@ -13,9 +13,8 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
-// GetKubeconfigFromHost returns a kubeconfig as raw bytes with filepath references populated
-// and extraneous contexts stripped out.
-func GetKubeconfigFromHost(kubeconfigPath, context string) ([]byte, error) {
+// GetClientCmdFromHost returns a clientcmd from the host. Finds default kubeconfig and context if not set
+func GetClientCmdFromHost(kubeconfigPath, context, defaultNamespace string) (clientcmd.ClientConfig, error) {
 	kubeconfigPath, err := resolveKubeconfigPath(kubeconfigPath)
 
 	if err != nil {
@@ -25,7 +24,12 @@ func GetKubeconfigFromHost(kubeconfigPath, context string) ([]byte, error) {
 	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
 	loadingRules.ExplicitPath = kubeconfigPath
 
-	clientConf := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, &clientcmd.ConfigOverrides{})
+	clientConf := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, &clientcmd.ConfigOverrides{
+		Context: clientcmdapi.Context{
+			Namespace: defaultNamespace,
+		},
+	})
+
 	rawConf, err := clientConf.RawConfig()
 
 	if err != nil {
@@ -43,19 +47,13 @@ func GetKubeconfigFromHost(kubeconfigPath, context string) ([]byte, error) {
 	populateCertificateRefs(&rawConf)
 	populateOIDCPluginCerts(&rawConf)
 
-	conf, err := stripAndValidateClientContexts(&rawConf, context, []string{context})
+	conf, err := stripAndValidateClientContexts(&rawConf, context, []string{context}, defaultNamespace)
 
 	if err != nil {
 		return nil, err
 	}
 
-	strippedRawConf, err := conf.RawConfig()
-
-	if err != nil {
-		return nil, err
-	}
-
-	return clientcmd.Write(strippedRawConf)
+	return conf, err
 }
 
 // resolveKubeconfigPath finds the path to a kubeconfig, first searching for the
@@ -87,6 +85,7 @@ func stripAndValidateClientContexts(
 	rawConf *clientcmdapi.Config,
 	currentContext string,
 	allowedContexts []string,
+	defaultNamespace string,
 ) (clientcmd.ClientConfig, error) {
 	// grab a copy to get the pointer and set clusters, authinfos, and contexts to empty
 	copyConf := rawConf.DeepCopy()
@@ -122,7 +121,11 @@ func stripAndValidateClientContexts(
 		return nil, err
 	}
 
-	clientConf := clientcmd.NewDefaultClientConfig(*copyConf, &clientcmd.ConfigOverrides{})
+	clientConf := clientcmd.NewDefaultClientConfig(*copyConf, &clientcmd.ConfigOverrides{
+		Context: clientcmdapi.Context{
+			Namespace: defaultNamespace,
+		},
+	})
 
 	return clientConf, nil
 }

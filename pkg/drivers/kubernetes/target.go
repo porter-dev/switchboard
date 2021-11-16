@@ -1,6 +1,10 @@
 package kubernetes
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/porter-dev/switchboard/internal/objutils"
+)
 
 const (
 	TargetKindLocal string = "local"
@@ -11,6 +15,7 @@ type Target struct {
 
 	Kind      string
 	Namespace string
+	Agent     *Agent
 }
 
 type TargetLocal struct {
@@ -20,14 +25,13 @@ type TargetLocal struct {
 
 func GetTarget(genericTarget map[string]interface{}) (*Target, error) {
 	res := &Target{}
+	var err error
 
 	// look for a target kind, which is required
-	targetKind, targetKindExists := genericTarget["kind"]
+	res.Kind, err = objutils.GetNestedString(genericTarget, "kind")
 
-	if targetKindExists {
-		if targetKindStr, ok := targetKind.(string); ok {
-			res.Kind = targetKindStr
-		}
+	if err != nil {
+		return nil, err
 	}
 
 	if res.Kind == "" {
@@ -35,13 +39,7 @@ func GetTarget(genericTarget map[string]interface{}) (*Target, error) {
 	}
 
 	// look for a target namespace
-	targetNS, targetNSExists := genericTarget["namespace"]
-
-	if targetNSExists {
-		if targetNSStr, ok := targetNS.(string); ok {
-			res.Namespace = targetNSStr
-		}
-	}
+	res.Namespace, err = objutils.GetNestedString(genericTarget, "namespace")
 
 	// if the target namespace does not exist, set it as "default"
 	if res.Namespace == "" {
@@ -53,20 +51,20 @@ func GetTarget(genericTarget map[string]interface{}) (*Target, error) {
 		// if the target kind is local, the kubeconfig path and context can be optionally set
 		res.TargetLocal = &TargetLocal{}
 
-		kubePath, kubePathExists := genericTarget["kubeconfig_path"]
-		kubeContext, kubeContextExists := genericTarget["kubeconfig_context"]
+		res.TargetLocal.KubeconfigPath, _ = objutils.GetNestedString(genericTarget, "kubeconfig_path")
+		res.TargetLocal.KubeconfigContext, _ = objutils.GetNestedString(genericTarget, "kubeconfig_context")
 
-		if kubePathExists {
-			if kubePathStr, ok := kubePath.(string); ok {
-				res.TargetLocal.KubeconfigPath = kubePathStr
-			}
+		agent, err := GetAgentFromHost(
+			res.TargetLocal.KubeconfigPath,
+			res.TargetLocal.KubeconfigContext,
+			res.Namespace,
+		)
+
+		if err != nil {
+			return nil, fmt.Errorf("could not get kube client: %v", err)
 		}
 
-		if kubeContextExists {
-			if kubeContextStr, ok := kubeContext.(string); ok {
-				res.TargetLocal.KubeconfigContext = kubeContextStr
-			}
-		}
+		res.Agent = agent
 	}
 
 	return res, nil

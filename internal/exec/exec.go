@@ -104,7 +104,12 @@ func Execute(nodes []*ExecNode, execFunc ExecFunc) error {
 					defer wg.Done()
 
 					nodeP.SetStarted()
-					execFunc(nodeP.resource)
+					err := execFunc(nodeP.resource)
+
+					if err != nil {
+						fmt.Printf("ERROR RUNNING %s: %v\n", node.resource.Name, err)
+					}
+
 					nodeP.SetFinished()
 				}()
 			}

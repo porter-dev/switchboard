@@ -36,10 +36,14 @@ type GetConfigOpts struct {
 	SourceType SourceType
 }
 
-func GetAgentFromLocalKubeconfig(kubeconfig []byte) (*Agent, error) {
-	getter := &LocalRESTClientGetter{
-		kubeconfig: kubeconfig,
+func GetAgentFromHost(kubeconfigPath, context, defaultNamespace string) (*Agent, error) {
+	cmdConf, err := GetClientCmdFromHost(kubeconfigPath, context, defaultNamespace)
+
+	if err != nil {
+		return nil, err
 	}
+
+	getter := &LocalRESTClientGetter{defaultNamespace, cmdConf}
 
 	restConf, err := getter.ToRESTConfig()
 
@@ -63,17 +67,12 @@ func GetAgentFromLocalKubeconfig(kubeconfig []byte) (*Agent, error) {
 }
 
 type LocalRESTClientGetter struct {
-	kubeconfig []byte
+	namespace string
+	cmdConf   clientcmd.ClientConfig
 }
 
 func (l *LocalRESTClientGetter) ToRESTConfig() (*rest.Config, error) {
-	cmdConf, err := clientcmd.NewClientConfigFromBytes(l.kubeconfig)
-
-	if err != nil {
-		return nil, err
-	}
-
-	restConf, err := cmdConf.ClientConfig()
+	restConf, err := l.cmdConf.ClientConfig()
 
 	if err != nil {
 		return nil, err
@@ -123,7 +122,5 @@ func (l *LocalRESTClientGetter) ToRESTMapper() (meta.RESTMapper, error) {
 // ToRawKubeConfigLoader creates a clientcmd.ClientConfig from the raw kubeconfig found in
 // the OutOfClusterConfig. It does not implement loading rules or overrides.
 func (l *LocalRESTClientGetter) ToRawKubeConfigLoader() clientcmd.ClientConfig {
-	cmdConf, _ := clientcmd.NewClientConfigFromBytes(l.kubeconfig)
-
-	return cmdConf
+	return l.cmdConf
 }
