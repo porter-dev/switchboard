@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 
 	"github.com/porter-dev/switchboard/internal/models"
-	"github.com/porter-dev/switchboard/internal/query"
 	"github.com/porter-dev/switchboard/pkg/drivers"
 
 	"sigs.k8s.io/yaml"
@@ -49,13 +48,11 @@ func NewKubernetesDriver(resource *models.Resource, opts *drivers.SharedDriverOp
 
 	driver.target = target
 
-	err = driver.initTarget(target)
-
-	if err != nil {
-		return nil, err
-	}
-
 	return driver, nil
+}
+
+func (d *Driver) GetAgent() *Agent {
+	return d.agent
 }
 
 func (d *Driver) initSource(source *Source, opts *drivers.SharedDriverOpts) error {
@@ -100,48 +97,17 @@ func (d *Driver) initSource(source *Source, opts *drivers.SharedDriverOpts) erro
 	return nil
 }
 
-func (d *Driver) initTarget(target *Target) error {
-	// read the kubeconfig and construct an agent
-	switch target.Kind {
-	case TargetKindLocal:
-		kubeBytes, err := GetKubeconfigFromHost(target.TargetLocal.KubeconfigPath, target.TargetLocal.KubeconfigContext)
-
-		if err != nil {
-			return fmt.Errorf("could not get kubeconfig: %v", err)
-		}
-
-		agent, err := GetAgentFromLocalKubeconfig(kubeBytes)
-
-		if err != nil {
-			return fmt.Errorf("could not get kube client: %v", err)
-		}
-
-		d.agent = agent
-	}
-
-	return nil
-}
-
 func (d *Driver) ShouldApply(resource *models.Resource) bool {
 	return true
 }
 
 func (d *Driver) Apply(resource *models.Resource) (*models.Resource, error) {
 	// get the config based on data population
-	dataMap := make(map[string]interface{})
-	lookupTable := *d.lookupTable
-
-	for _, dependency := range resource.Dependencies {
-		depOutput, err := lookupTable[dependency].Output()
-
-		if err != nil {
-			return nil, err
-		}
-
-		dataMap[dependency] = depOutput
-	}
-
-	config, err := query.PopulateQueries(resource.Config, dataMap)
+	config, err := drivers.ConstructConfig(&drivers.ConstructConfigOpts{
+		RawConf:      resource.Config,
+		LookupTable:  *d.lookupTable,
+		Dependencies: resource.Dependencies,
+	})
 
 	if err != nil {
 		return nil, err

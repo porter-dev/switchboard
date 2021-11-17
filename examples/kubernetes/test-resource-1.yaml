@@ -1,0 +1,26 @@
+version: v1
+resources:
+- name: test-deployment
+  driver: kubernetes
+  source:
+    kind: local
+    path: ./nginx-deployment.yaml
+  target:
+    kind: local
+  config:
+    spec:
+      replicas: 1
+- name: test-deployment-2
+  depends_on: 
+  - test-deployment
+  driver: kubernetes
+  source:
+    kind: local
+    path: ./nginx-deployment.yaml
+  target:
+    kind: local
+  config:
+    metadata:
+      name: nginx-deployment-2
+    spec:
+      replicas: "{ .test-deployment.spec.replicas }"

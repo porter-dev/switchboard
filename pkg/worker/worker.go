@@ -7,6 +7,7 @@ import (
 	"github.com/porter-dev/switchboard/internal/exec"
 	"github.com/porter-dev/switchboard/internal/models"
 	"github.com/porter-dev/switchboard/pkg/drivers"
+	"github.com/porter-dev/switchboard/pkg/drivers/helm"
 	"github.com/porter-dev/switchboard/pkg/drivers/kubernetes"
 	"github.com/porter-dev/switchboard/pkg/types"
 )
@@ -41,8 +42,16 @@ func Apply(group *types.ResourceGroup, opts *ApplyOpts) error {
 
 		resources = append(resources, modelResource)
 
-		// construct a driver for this resource
-		driver, err := kubernetes.NewKubernetesDriver(modelResource, sharedDriverOpts)
+		var driver drivers.Driver
+		var err error
+
+		// switch on the driver type to construct the driver
+		switch resource.Driver {
+		case "kubernetes":
+			driver, err = kubernetes.NewKubernetesDriver(modelResource, sharedDriverOpts)
+		case "helm":
+			driver, err = helm.NewHelmDriver(modelResource, sharedDriverOpts)
+		}
 
 		// TODO: append errors, don't exit here
 		if err != nil {
