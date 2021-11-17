@@ -3,6 +3,7 @@ package helm
 import (
 	"github.com/porter-dev/switchboard/internal/models"
 	"github.com/porter-dev/switchboard/pkg/drivers"
+	"github.com/rs/zerolog"
 )
 
 type Driver struct {
@@ -10,11 +11,13 @@ type Driver struct {
 	target      *Target
 	output      map[string]interface{}
 	lookupTable *map[string]drivers.Driver
+	logger      *zerolog.Logger
 }
 
 func NewHelmDriver(resource *models.Resource, opts *drivers.SharedDriverOpts) (*Driver, error) {
 	driver := &Driver{
 		lookupTable: opts.DriverLookupTable,
+		logger:      opts.Logger,
 	}
 
 	source, err := GetSource(resource.Source)
@@ -25,7 +28,7 @@ func NewHelmDriver(resource *models.Resource, opts *drivers.SharedDriverOpts) (*
 
 	driver.source = source
 
-	target, err := GetTarget(resource.Target)
+	target, err := GetTarget(resource.Target, opts.Logger)
 
 	if err != nil {
 		return nil, err
@@ -54,6 +57,7 @@ func (d *Driver) Apply(resource *models.Resource) (*models.Resource, error) {
 	rel, err := d.target.agent.Apply(&ApplyOpts{
 		Config: config,
 		Target: d.target,
+		Source: d.source,
 	})
 
 	if err != nil {

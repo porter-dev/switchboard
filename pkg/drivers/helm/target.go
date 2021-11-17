@@ -1,8 +1,6 @@
 package helm
 
 import (
-	"os"
-
 	"github.com/porter-dev/switchboard/internal/objutils"
 	"github.com/porter-dev/switchboard/pkg/drivers/kubernetes"
 	"github.com/rs/zerolog"
@@ -17,7 +15,7 @@ type Target struct {
 	Name string
 }
 
-func GetTarget(genericTarget map[string]interface{}) (*Target, error) {
+func GetTarget(genericTarget map[string]interface{}, logger *zerolog.Logger) (*Target, error) {
 	res := &Target{}
 
 	kubeTarget, err := kubernetes.GetTarget(genericTarget)
@@ -27,14 +25,13 @@ func GetTarget(genericTarget map[string]interface{}) (*Target, error) {
 	}
 
 	res.Target = kubeTarget
-	logger := zerolog.New(os.Stdout)
 
 	// get the Helm agent from the kube Agent
 	agent, err := GetAgent(&GetAgentOpts{
 		Namespace: kubeTarget.Namespace,
 		Storage:   "secret",
 		Agent:     kubeTarget.Agent,
-		Logger:    &logger,
+		Logger:    logger,
 	})
 
 	if err != nil {

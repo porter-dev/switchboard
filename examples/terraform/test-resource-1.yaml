@@ -1,0 +1,33 @@
+version: v1
+resources:
+- name: rds
+  driver: terraform
+  source:
+    kind: local
+    path: ./examples/terraform
+  config:
+    rds_username: general2
+    rds_password: kenobi2
+    rds_host: deathstar2
+- name: tf-deployment
+  driver: helm
+  depends_on: 
+  - rds
+  source:
+    chart_name: web
+    chart_version: "0.10.0"
+    chart_repository: https://charts.getporter.dev
+  target:
+    kind: local
+    kubeconfig_context: arn:aws:eks:us-east-2:975032674314:cluster/dev
+    namespace: alexander
+    name: rds-test
+  config:
+    ingress:
+      enabled: false
+    container:
+      env:
+        normal:
+          RDS_USERNAME: "{ .rds.rds_username }"
+          RDS_PASSWORD: "{ .rds.rds_password }"
+          RDS_HOST: "{ .rds.rds_host }"

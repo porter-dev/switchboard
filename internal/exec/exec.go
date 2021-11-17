@@ -91,6 +91,7 @@ func GetExecNodes(group *models.ResourceGroup) ([]*ExecNode, error) {
 // Execute simply calls exec on nodes in parallel, in batches. This could be much more
 // efficient.
 func Execute(nodes []*ExecNode, execFunc ExecFunc) error {
+	var outErr error
 	for {
 		var wg sync.WaitGroup
 
@@ -107,12 +108,17 @@ func Execute(nodes []*ExecNode, execFunc ExecFunc) error {
 					err := execFunc(nodeP.resource)
 
 					if err != nil {
-						fmt.Printf("ERROR RUNNING %s: %v\n", node.resource.Name, err)
+						outErr = err
+						return
 					}
 
 					nodeP.SetFinished()
 				}()
 			}
+		}
+
+		if outErr != nil {
+			break
 		}
 
 		wg.Wait()
@@ -122,7 +128,7 @@ func Execute(nodes []*ExecNode, execFunc ExecFunc) error {
 		}
 	}
 
-	return nil
+	return outErr
 }
 
 func areAllNodesFinished(nodes []*ExecNode) bool {

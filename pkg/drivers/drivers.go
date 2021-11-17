@@ -3,11 +3,13 @@ package drivers
 import (
 	"github.com/porter-dev/switchboard/internal/models"
 	"github.com/porter-dev/switchboard/internal/query"
+	"github.com/rs/zerolog"
 )
 
 type SharedDriverOpts struct {
 	BaseDir           string
 	DriverLookupTable *map[string]Driver
+	Logger            *zerolog.Logger
 }
 
 type QueryFunc func(data map[string]interface{}, query string) (interface{}, error)
