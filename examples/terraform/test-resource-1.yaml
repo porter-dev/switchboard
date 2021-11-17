@@ -6,9 +6,9 @@ resources:
     kind: local
     path: ./examples/terraform
   config:
-    rds_username: general
-    rds_password: kenobi
-    rds_host: deathstar
+    rds_username: general2
+    rds_password: kenobi2
+    rds_host: deathstar2
 - name: tf-deployment
   driver: helm
   depends_on: 

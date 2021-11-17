@@ -3,6 +3,7 @@ package terraform
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -11,6 +12,8 @@ import (
 	"github.com/hashicorp/terraform-exec/tfexec"
 	"github.com/porter-dev/switchboard/internal/models"
 	"github.com/porter-dev/switchboard/pkg/drivers"
+
+	hcljson "github.com/hashicorp/hcl2/hcl/json"
 )
 
 type Driver struct {
@@ -40,11 +43,13 @@ func NewTerraformDriver(resource *models.Resource, opts *drivers.SharedDriverOpt
 
 	driver.source = source
 
-	// construct the var file path
-	if filepath.IsAbs(source.Path) {
-		driver.varFilePath = filepath.Join(source.Path, "tfvars.json")
-	} else {
-		driver.varFilePath = filepath.Join(opts.BaseDir, source.Path, "tfvars.json")
+	if source.VarMethod == VarMethodFile {
+		// construct the var file path
+		if filepath.IsAbs(source.Path) {
+			driver.varFilePath = filepath.Join(source.Path, "tfvars.json")
+		} else {
+			driver.varFilePath = filepath.Join(opts.BaseDir, source.Path, "tfvars.json")
+		}
 	}
 
 	return driver, nil
@@ -62,7 +67,6 @@ func (d *Driver) initSource(source *Source, opts *drivers.SharedDriverOpts) erro
 
 		// TODO: don't set these to os stdout or stderr necessary, we probably want a json parser
 		// of sorts
-		// tf.SetStdout(os.Stdout)
 		tf.SetStderr(os.Stderr)
 
 		d.tf = tf
@@ -86,28 +90,22 @@ func (d *Driver) Apply(resource *models.Resource) (*models.Resource, error) {
 		return nil, err
 	}
 
-	// TODO: write config as var file in local path directory
-	file, err := json.Marshal(config)
-
-	if err != nil {
-		return nil, err
-	}
-
-	err = ioutil.WriteFile(d.varFilePath, file, 0644)
-
-	if err != nil {
-		return nil, err
-	}
-
 	err = d.tf.Init(context.Background())
+
 	if err != nil {
-		log.Fatalf("error running Init: %s", err)
+		return nil, err
 	}
 
-	err = d.tf.Apply(context.Background(), tfexec.VarFile(d.varFilePath))
+	applyOpts, err := d.getVarOpts(config)
 
 	if err != nil {
-		log.Fatalf("error running Apply: %s", err)
+		return nil, err
+	}
+
+	err = d.tf.Apply(context.Background(), applyOpts...)
+
+	if err != nil {
+		return nil, err
 	}
 
 	return resource, nil
@@ -143,4 +141,69 @@ func (d *Driver) Output() (map[string]interface{}, error) {
 	}
 
 	return res, nil
+}
+
+// setVars sets variables for the Terraform process through
+// either a var file or env variables.
+func (d *Driver) getVarOpts(config map[string]interface{}) ([]tfexec.ApplyOption, error) {
+	applyOpts := make([]tfexec.ApplyOption, 0)
+
+	if d.source.VarMethod == VarMethodFile {
+		applyOpts = append(applyOpts, tfexec.VarFile(d.varFilePath))
+	}
+
+	switch d.source.VarMethod {
+	case VarMethodEnv:
+		for key, val := range config {
+			valBytes, err := toHCL(val)
+
+			if err != nil {
+				return nil, err
+			}
+
+			applyOpts = append(applyOpts, tfexec.Var(fmt.Sprintf("%s=%s", key, string(valBytes))))
+		}
+	case VarMethodFile:
+		file, err := json.Marshal(config)
+
+		if err != nil {
+			return nil, err
+		}
+
+		err = ioutil.WriteFile(d.varFilePath, file, 0644)
+
+		if err != nil {
+			return nil, err
+		}
+
+		applyOpts = append(applyOpts, tfexec.VarFile(d.varFilePath))
+	}
+
+	return applyOpts, nil
+}
+
+func toHCL(val interface{}) ([]byte, error) {
+	jsonValBytes, err := json.Marshal(val)
+
+	if err != nil {
+		return []byte{}, err
+	}
+
+	switch val.(type) {
+	case map[string]interface{}:
+	case []interface{}:
+		// this is pretty annoying, but we first marshal into json and
+		// from there HCL
+		hclFile, err := hcljson.Parse(jsonValBytes, "")
+
+		if err != nil {
+			return []byte{}, err
+		}
+
+		return hclFile.Bytes, nil
+	}
+
+	// in the default case (string, int), we just return raw json,
+	// it should be valid
+	return jsonValBytes, nil
 }
