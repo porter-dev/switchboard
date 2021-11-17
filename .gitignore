@@ -1,6 +1,6 @@
 **.obsidian**
 
-./bin
+bin
 
 # Local .terraform directories
 **/.terraform/*
