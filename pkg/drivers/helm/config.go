@@ -1,6 +1,8 @@
 package helm
 
 import (
+	"io/ioutil"
+
 	"helm.sh/helm/v3/pkg/action"
 
 	"github.com/porter-dev/switchboard/pkg/drivers/kubernetes"
@@ -30,7 +32,9 @@ type GetAgentOpts struct {
 func GetAgent(opts *GetAgentOpts) (*Agent, error) {
 	actionConf := &action.Configuration{}
 
-	if err := actionConf.Init(opts.Agent.RESTClientGetter, opts.Namespace, opts.Storage, opts.Logger.Printf); err != nil {
+	silentLogger := zerolog.New(ioutil.Discard)
+
+	if err := actionConf.Init(opts.Agent.RESTClientGetter, opts.Namespace, opts.Storage, silentLogger.Printf); err != nil {
 		return nil, err
 	}
 
