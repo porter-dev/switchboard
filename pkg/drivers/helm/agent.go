@@ -7,6 +7,8 @@ import (
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/release"
 
+	helmloader "helm.sh/helm/v3/pkg/chart/loader"
+
 	"github.com/porter-dev/switchboard/pkg/drivers/helm/loader"
 	"github.com/porter-dev/switchboard/pkg/drivers/kubernetes"
 	"github.com/rs/zerolog"
@@ -92,8 +94,14 @@ func (a *Agent) installChart(
 	cmd.Namespace = target.Namespace
 	cmd.Timeout = 300
 
-	// load the chart
-	chart, err := loader.LoadChartPublic(source.ChartRepoURL, source.ChartName, source.ChartVersion)
+	// depending on the source, we load the chart
+	var err error
+	var chart *chart.Chart
+	if source.Kind == SourceKindRepository {
+		chart, err = loader.LoadChartPublic(source.ChartRepoURL, source.ChartName, source.ChartVersion)
+	} else if source.Kind == SourceKindLocal {
+		chart, err = helmloader.Load(source.SourceLocal.Path)
+	}
 
 	if err != nil {
 		return nil, err

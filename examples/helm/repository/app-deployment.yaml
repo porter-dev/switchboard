@@ -2,11 +2,13 @@ version: v1
 resources:
 - name: app-deployment
   driver: helm
+  source:
+    kind: repository
+    chart_name: web
+    chart_version: "0.10.0"
+    chart_url: https://charts.getporter.dev
   target:
     kind: local
     namespace: alexander
     name: whoa-there
-    chart_name: web
-    chart_version: "0.10.0"
-    chart_url: https://charts.getporter.dev
   config:
