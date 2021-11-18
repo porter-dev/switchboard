@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/hashicorp/terraform-exec/tfexec"
 	"github.com/porter-dev/switchboard/internal/models"
@@ -201,6 +202,9 @@ func toHCL(val interface{}) ([]byte, error) {
 		}
 
 		return hclFile.Bytes, nil
+	case string:
+		// in the case of a pure string, we return unquoted.
+		return []byte(strings.Trim(string(jsonValBytes), "\"")), nil
 	}
 
 	// in the default case (string, int), we just return raw json,
