@@ -91,7 +91,7 @@ func (d *Driver) Apply(resource *models.Resource) (*models.Resource, error) {
 		return nil, err
 	}
 
-	err = d.tf.Init(context.Background())
+	err = d.tf.Init(context.Background(), tfexec.Upgrade(true))
 
 	if err != nil {
 		return nil, err
