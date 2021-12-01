@@ -27,6 +27,8 @@ type Driver interface {
 	Output() (map[string]interface{}, error)
 }
 
+type DriverFunc func(*models.Resource, *SharedDriverOpts) (Driver, error)
+
 type ConstructConfigOpts struct {
 	RawConf      map[string]interface{}
 	LookupTable  map[string]Driver

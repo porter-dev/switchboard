@@ -14,7 +14,7 @@ type Driver struct {
 	logger      *zerolog.Logger
 }
 
-func NewHelmDriver(resource *models.Resource, opts *drivers.SharedDriverOpts) (*Driver, error) {
+func NewHelmDriver(resource *models.Resource, opts *drivers.SharedDriverOpts) (drivers.Driver, error) {
 	driver := &Driver{
 		lookupTable: opts.DriverLookupTable,
 		logger:      opts.Logger,
