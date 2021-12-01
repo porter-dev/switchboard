@@ -7,28 +7,39 @@ import (
 	"github.com/porter-dev/switchboard/internal/exec"
 	"github.com/porter-dev/switchboard/internal/models"
 	"github.com/porter-dev/switchboard/pkg/drivers"
-	"github.com/porter-dev/switchboard/pkg/drivers/helm"
-	"github.com/porter-dev/switchboard/pkg/drivers/kubernetes"
-	"github.com/porter-dev/switchboard/pkg/drivers/terraform"
 	"github.com/porter-dev/switchboard/pkg/types"
 	"github.com/rs/zerolog"
 )
 
-type ApplyOpts struct {
-	BasePath       string
-	Logger         *zerolog.Logger
-	ResourceLogger *zerolog.Logger
+type Worker struct {
+	driversTable map[string]drivers.DriverFunc
+}
+
+func NewWorker() *Worker {
+	return &Worker{
+		driversTable: make(map[string]drivers.DriverFunc),
+	}
+}
+
+func (w *Worker) RegisterDriver(name string, driverFunc drivers.DriverFunc) error {
+	if _, ok := w.driversTable[name]; ok {
+		return fmt.Errorf("driver with name '%s' already exists", name)
+	}
+
+	w.driversTable[name] = driverFunc
+
+	return nil
 }
 
 // Apply creates a ResourceGroup
-func Apply(group *types.ResourceGroup, opts *ApplyOpts) error {
+func (w *Worker) Apply(group *types.ResourceGroup, opts *exec.ApplyOpts) error {
 	// create a map of resource names to drivers
-	driverLookupTable := make(map[string]drivers.Driver)
+	lookupTable := make(map[string]drivers.Driver)
 	stdOut := zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout})
 
 	sharedDriverOpts := &drivers.SharedDriverOpts{
 		BaseDir:           opts.BasePath,
-		DriverLookupTable: &driverLookupTable,
+		DriverLookupTable: &lookupTable,
 		Logger:            &stdOut,
 	}
 
@@ -52,22 +63,20 @@ func Apply(group *types.ResourceGroup, opts *ApplyOpts) error {
 		var err error
 
 		// switch on the driver type to construct the driver
-		switch resource.Driver {
-		case "kubernetes":
-			driver, err = kubernetes.NewKubernetesDriver(modelResource, sharedDriverOpts)
-		case "helm":
-			driver, err = helm.NewHelmDriver(modelResource, sharedDriverOpts)
-		case "terraform":
-			driver, err = terraform.NewTerraformDriver(modelResource, sharedDriverOpts)
-		}
+		if driverFunc, ok := w.driversTable[resource.Driver]; ok {
+			driver, err = driverFunc(modelResource, sharedDriverOpts)
 
-		// TODO: append errors, don't exit here
-		if err != nil {
-			stdOut.Err(err).Send()
+			// TODO: append errors, don't exit here
+			if err != nil {
+				return err
+			}
+		} else {
+			// TODO: append errors, don't exit here
+			err = fmt.Errorf("no driver found with name '%s'", resource.Driver)
 			return err
 		}
 
-		driverLookupTable[resource.Name] = driver
+		lookupTable[resource.Name] = driver
 	}
 
 	nodes, err := exec.GetExecNodes(&models.ResourceGroup{
@@ -76,7 +85,6 @@ func Apply(group *types.ResourceGroup, opts *ApplyOpts) error {
 	})
 
 	if err != nil {
-		stdOut.Err(err).Send()
 		return err
 	}
 

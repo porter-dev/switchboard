@@ -25,7 +25,7 @@ type Driver struct {
 	tf          *tfexec.Terraform
 }
 
-func NewTerraformDriver(resource *models.Resource, opts *drivers.SharedDriverOpts) (*Driver, error) {
+func NewTerraformDriver(resource *models.Resource, opts *drivers.SharedDriverOpts) (drivers.Driver, error) {
 	driver := &Driver{
 		lookupTable: opts.DriverLookupTable,
 	}

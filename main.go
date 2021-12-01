@@ -4,6 +4,10 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/porter-dev/switchboard/internal/exec"
+	"github.com/porter-dev/switchboard/pkg/drivers/helm"
+	"github.com/porter-dev/switchboard/pkg/drivers/kubernetes"
+	"github.com/porter-dev/switchboard/pkg/drivers/terraform"
 	"github.com/porter-dev/switchboard/pkg/parser"
 	"github.com/porter-dev/switchboard/pkg/worker"
 )
@@ -28,7 +32,12 @@ func main() {
 		panic(err)
 	}
 
-	err = worker.Apply(resGroup, &worker.ApplyOpts{
+	worker := worker.NewWorker()
+	worker.RegisterDriver("helm", helm.NewHelmDriver)
+	worker.RegisterDriver("kubernetes", kubernetes.NewKubernetesDriver)
+	worker.RegisterDriver("terraform", terraform.NewTerraformDriver)
+
+	err = worker.Apply(resGroup, &exec.ApplyOpts{
 		BasePath: basePath,
 	})
 

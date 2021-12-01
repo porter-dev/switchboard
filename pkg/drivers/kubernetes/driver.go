@@ -21,7 +21,7 @@ type Driver struct {
 	lookupTable *map[string]drivers.Driver
 }
 
-func NewKubernetesDriver(resource *models.Resource, opts *drivers.SharedDriverOpts) (*Driver, error) {
+func NewKubernetesDriver(resource *models.Resource, opts *drivers.SharedDriverOpts) (drivers.Driver, error) {
 	driver := &Driver{
 		lookupTable: opts.DriverLookupTable,
 	}
