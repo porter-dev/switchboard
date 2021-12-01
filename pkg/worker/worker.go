@@ -7,23 +7,32 @@ import (
 	"github.com/porter-dev/switchboard/internal/exec"
 	"github.com/porter-dev/switchboard/internal/models"
 	"github.com/porter-dev/switchboard/pkg/drivers"
-	"github.com/porter-dev/switchboard/pkg/drivers/helm"
-	"github.com/porter-dev/switchboard/pkg/drivers/kubernetes"
-	"github.com/porter-dev/switchboard/pkg/drivers/terraform"
 	"github.com/porter-dev/switchboard/pkg/types"
 	"github.com/rs/zerolog"
 )
 
-var driversTable map[string]drivers.DriverFunc
+type Worker struct {
+	driversTable map[string]drivers.DriverFunc
+}
 
-type ApplyOpts struct {
-	BasePath       string
-	Logger         *zerolog.Logger
-	ResourceLogger *zerolog.Logger
+func NewWorker() *Worker {
+	return &Worker{
+		driversTable: make(map[string]drivers.DriverFunc),
+	}
+}
+
+func (w *Worker) RegisterDriver(name string, driverFunc drivers.DriverFunc) error {
+	if _, ok := w.driversTable[name]; ok {
+		return fmt.Errorf("driver with name '%s' already exists", name)
+	}
+
+	w.driversTable[name] = driverFunc
+
+	return nil
 }
 
 // Apply creates a ResourceGroup
-func Apply(group *types.ResourceGroup, opts *ApplyOpts) error {
+func (w *Worker) Apply(group *types.ResourceGroup, opts *exec.ApplyOpts) error {
 	// create a map of resource names to drivers
 	lookupTable := make(map[string]drivers.Driver)
 	stdOut := zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout})
@@ -54,7 +63,7 @@ func Apply(group *types.ResourceGroup, opts *ApplyOpts) error {
 		var err error
 
 		// switch on the driver type to construct the driver
-		if driverFunc, ok := driversTable[resource.Driver]; ok {
+		if driverFunc, ok := w.driversTable[resource.Driver]; ok {
 			driver, err = driverFunc(modelResource, sharedDriverOpts)
 
 			// TODO: append errors, don't exit here
@@ -102,22 +111,4 @@ func getExecFunc(opts *drivers.SharedDriverOpts) exec.ExecFunc {
 
 		return nil
 	}
-}
-
-func RegisterDriver(name string, driverFunc drivers.DriverFunc) error {
-	if _, ok := driversTable[name]; ok {
-		return fmt.Errorf("driver with name '%s' already exists", name)
-	}
-
-	driversTable[name] = driverFunc
-
-	return nil
-}
-
-func init() {
-	driversTable = make(map[string]drivers.DriverFunc)
-
-	RegisterDriver("helm", helm.NewHelmDriver)
-	RegisterDriver("kubernetes", kubernetes.NewKubernetesDriver)
-	RegisterDriver("terraform", terraform.NewTerraformDriver)
 }
