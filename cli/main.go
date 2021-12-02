@@ -6,7 +6,11 @@ import (
 	"os"
 
 	"github.com/fatih/color"
+	"github.com/porter-dev/switchboard/pkg/drivers/helm"
+	"github.com/porter-dev/switchboard/pkg/drivers/kubernetes"
+	"github.com/porter-dev/switchboard/pkg/drivers/terraform"
 	"github.com/porter-dev/switchboard/pkg/parser"
+	"github.com/porter-dev/switchboard/pkg/types"
 	"github.com/porter-dev/switchboard/pkg/worker"
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
@@ -72,7 +76,12 @@ func apply(args []string, logger *zerolog.Logger) error {
 		return err
 	}
 
-	return worker.Apply(resGroup, &worker.ApplyOpts{
+	worker := worker.NewWorker()
+	worker.RegisterDriver("helm", helm.NewHelmDriver)
+	worker.RegisterDriver("kubernetes", kubernetes.NewKubernetesDriver)
+	worker.RegisterDriver("terraform", terraform.NewTerraformDriver)
+
+	return worker.Apply(resGroup, &types.ApplyOpts{
 		BasePath: basePath,
 	})
 }
