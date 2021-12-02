@@ -51,7 +51,6 @@ func (q *queryIterator) iterInterface(val interface{}) interface{} {
 		bracesReg := regexp.MustCompile(`\{(.+)\}`)
 
 		if bracesReg.MatchString(val.(string)) {
-
 			// get the query value from data
 			res, err := jsonpath.GetResult(q.data, val.(string))
 
