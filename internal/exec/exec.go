@@ -5,14 +5,7 @@ import (
 	"sync"
 
 	"github.com/porter-dev/switchboard/internal/models"
-	"github.com/rs/zerolog"
 )
-
-type ApplyOpts struct {
-	BasePath       string
-	Logger         *zerolog.Logger
-	ResourceLogger *zerolog.Logger
-}
 
 // TODO: this exec func should probably accept channels or something
 type ExecFunc func(resource *models.Resource) error

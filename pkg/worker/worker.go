@@ -32,7 +32,7 @@ func (w *Worker) RegisterDriver(name string, driverFunc drivers.DriverFunc) erro
 }
 
 // Apply creates a ResourceGroup
-func (w *Worker) Apply(group *types.ResourceGroup, opts *exec.ApplyOpts) error {
+func (w *Worker) Apply(group *types.ResourceGroup, opts *types.ApplyOpts) error {
 	// create a map of resource names to drivers
 	lookupTable := make(map[string]drivers.Driver)
 	stdOut := zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout})
