@@ -11,8 +11,8 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-exec/tfexec"
-	"github.com/porter-dev/switchboard/internal/models"
 	"github.com/porter-dev/switchboard/pkg/drivers"
+	"github.com/porter-dev/switchboard/pkg/models"
 
 	hcljson "github.com/hashicorp/hcl2/hcl/json"
 )

@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/porter-dev/switchboard/internal/models"
 	"github.com/porter-dev/switchboard/pkg/drivers"
+	"github.com/porter-dev/switchboard/pkg/models"
 
 	"sigs.k8s.io/yaml"
 )

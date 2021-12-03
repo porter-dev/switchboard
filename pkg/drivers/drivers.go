@@ -1,8 +1,8 @@
 package drivers
 
 import (
-	"github.com/porter-dev/switchboard/internal/models"
 	"github.com/porter-dev/switchboard/internal/query"
+	"github.com/porter-dev/switchboard/pkg/models"
 	"github.com/rs/zerolog"
 )
 

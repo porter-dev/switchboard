@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/porter-dev/switchboard/internal/models"
+	"github.com/porter-dev/switchboard/pkg/models"
 )
 
 // TODO: this exec func should probably accept channels or something

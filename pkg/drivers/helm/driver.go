@@ -1,8 +1,8 @@
 package helm
 
 import (
-	"github.com/porter-dev/switchboard/internal/models"
 	"github.com/porter-dev/switchboard/pkg/drivers"
+	"github.com/porter-dev/switchboard/pkg/models"
 	"github.com/rs/zerolog"
 )
 

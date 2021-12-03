@@ -5,8 +5,8 @@ import (
 	"os"
 
 	"github.com/porter-dev/switchboard/internal/exec"
-	"github.com/porter-dev/switchboard/internal/models"
 	"github.com/porter-dev/switchboard/pkg/drivers"
+	"github.com/porter-dev/switchboard/pkg/models"
 	"github.com/porter-dev/switchboard/pkg/types"
 	"github.com/rs/zerolog"
 )
