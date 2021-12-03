@@ -1,6 +1,6 @@
 package helm
 
-import "github.com/porter-dev/switchboard/internal/objutils"
+import "github.com/porter-dev/switchboard/utils/objutils"
 
 type SourceKind string
 

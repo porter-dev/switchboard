@@ -1,8 +1,8 @@
 package helm
 
 import (
-	"github.com/porter-dev/switchboard/internal/objutils"
 	"github.com/porter-dev/switchboard/pkg/drivers/kubernetes"
+	"github.com/porter-dev/switchboard/utils/objutils"
 	"github.com/rs/zerolog"
 )
 

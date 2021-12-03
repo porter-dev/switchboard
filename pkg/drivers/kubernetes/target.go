@@ -3,7 +3,7 @@ package kubernetes
 import (
 	"fmt"
 
-	"github.com/porter-dev/switchboard/internal/objutils"
+	"github.com/porter-dev/switchboard/utils/objutils"
 )
 
 const (
