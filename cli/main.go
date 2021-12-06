@@ -80,6 +80,7 @@ func apply(args []string, logger *zerolog.Logger) error {
 	worker.RegisterDriver("helm", helm.NewHelmDriver)
 	worker.RegisterDriver("kubernetes", kubernetes.NewKubernetesDriver)
 	worker.RegisterDriver("terraform", terraform.NewTerraformDriver)
+	worker.SetDefaultDriver("helm")
 
 	return worker.Apply(resGroup, &types.ApplyOpts{
 		BasePath: basePath,

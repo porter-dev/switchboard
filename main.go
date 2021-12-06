@@ -36,6 +36,7 @@ func main() {
 	worker.RegisterDriver("helm", helm.NewHelmDriver)
 	worker.RegisterDriver("kubernetes", kubernetes.NewKubernetesDriver)
 	worker.RegisterDriver("terraform", terraform.NewTerraformDriver)
+	worker.SetDefaultDriver("helm")
 
 	err = worker.Apply(resGroup, &types.ApplyOpts{
 		BasePath: basePath,

@@ -12,12 +12,14 @@ import (
 )
 
 type Worker struct {
-	driversTable map[string]drivers.DriverFunc
+	driversTable  map[string]drivers.DriverFunc
+	defaultDriver string
 }
 
 func NewWorker() *Worker {
 	return &Worker{
-		driversTable: make(map[string]drivers.DriverFunc),
+		driversTable:  make(map[string]drivers.DriverFunc),
+		defaultDriver: "",
 	}
 }
 
@@ -27,6 +29,16 @@ func (w *Worker) RegisterDriver(name string, driverFunc drivers.DriverFunc) erro
 	}
 
 	w.driversTable[name] = driverFunc
+
+	return nil
+}
+
+func (w *Worker) SetDefaultDriver(name string) error {
+	if _, ok := w.driversTable[name]; !ok {
+		return fmt.Errorf("attempting to set default driver with name '%s' that does not exist", name)
+	}
+
+	w.defaultDriver = name
 
 	return nil
 }
@@ -63,7 +75,16 @@ func (w *Worker) Apply(group *types.ResourceGroup, opts *types.ApplyOpts) error 
 		var err error
 
 		// switch on the driver type to construct the driver
-		if driverFunc, ok := w.driversTable[resource.Driver]; ok {
+		if len(w.driversTable) == 0 {
+			return fmt.Errorf("no drivers registered")
+		} else if resource.Driver == "" {
+			driver, err = w.driversTable[w.defaultDriver](modelResource, sharedDriverOpts)
+
+			// TODO: append errors, don't exit here
+			if err != nil {
+				return err
+			}
+		} else if driverFunc, ok := w.driversTable[resource.Driver]; ok {
 			driver, err = driverFunc(modelResource, sharedDriverOpts)
 
 			// TODO: append errors, don't exit here
