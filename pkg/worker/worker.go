@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/porter-dev/switchboard/internal/exec"
+	"github.com/porter-dev/switchboard/internal/query"
 	"github.com/porter-dev/switchboard/pkg/drivers"
 	"github.com/porter-dev/switchboard/pkg/models"
 	"github.com/porter-dev/switchboard/pkg/types"
@@ -13,12 +14,14 @@ import (
 
 type Worker struct {
 	driversTable  map[string]drivers.DriverFunc
+	hooksTable    map[string]WorkerHook
 	defaultDriver string
 }
 
 func NewWorker() *Worker {
 	return &Worker{
 		driversTable:  make(map[string]drivers.DriverFunc),
+		hooksTable:    make(map[string]WorkerHook),
 		defaultDriver: "",
 	}
 }
@@ -43,8 +46,33 @@ func (w *Worker) SetDefaultDriver(name string) error {
 	return nil
 }
 
+type WorkerHook interface {
+	PreApply() error
+	DataQueries() map[string]interface{}
+	PostApply(populatedData map[string]interface{}) error
+}
+
+func (w *Worker) RegisterHook(name string, hook WorkerHook) error {
+	if _, ok := w.hooksTable[name]; ok {
+		return fmt.Errorf("hook with name '%s' already exists", name)
+	}
+
+	w.hooksTable[name] = hook
+
+	return nil
+}
+
 // Apply creates a ResourceGroup
 func (w *Worker) Apply(group *types.ResourceGroup, opts *types.ApplyOpts) error {
+	// run any pre-apply hooks
+	for name, hook := range w.hooksTable {
+		err := hook.PreApply()
+
+		if err != nil {
+			return fmt.Errorf("error running hook '%s': %v", name, err)
+		}
+	}
+
 	// create a map of resource names to drivers
 	lookupTable := make(map[string]drivers.Driver)
 	stdOut := zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout})
@@ -109,7 +137,44 @@ func (w *Worker) Apply(group *types.ResourceGroup, opts *types.ApplyOpts) error 
 		return err
 	}
 
-	return exec.Execute(nodes, execFunc)
+	err = exec.Execute(nodes, execFunc)
+
+	if err != nil {
+		return err
+	}
+
+	// TODO: place in separate method, case on no hooks registered
+	// get all output data if there are post-apply hooks
+	allOutputData := make(map[string]interface{})
+
+	for _, resource := range group.Resources {
+		resourceOutput, err := lookupTable[resource.Name].Output()
+
+		if err != nil {
+			return err
+		}
+
+		allOutputData[resource.Name] = resourceOutput
+	}
+
+	// run any post-apply hooks
+	for name, hook := range w.hooksTable {
+		// get the data to query
+		dataQueries := hook.DataQueries()
+		dataRes, err := query.PopulateQueries(dataQueries, allOutputData)
+
+		if err != nil {
+			return fmt.Errorf("error running hook '%s': %v", name, err)
+		}
+
+		err = hook.PostApply(dataRes)
+
+		if err != nil {
+			return fmt.Errorf("error running hook '%s': %v", name, err)
+		}
+	}
+
+	return nil
 }
 
 func getExecFunc(opts *drivers.SharedDriverOpts) exec.ExecFunc {

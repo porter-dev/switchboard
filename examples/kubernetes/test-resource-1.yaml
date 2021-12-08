@@ -4,7 +4,7 @@ resources:
   driver: kubernetes
   source:
     kind: local
-    path: ./nginx-deployment.yaml
+    path: ./examples/kubernetes/nginx-deployment.yaml
   target:
     kind: local
   config:
@@ -16,7 +16,7 @@ resources:
   driver: kubernetes
   source:
     kind: local
-    path: ./nginx-deployment.yaml
+    path: ./examples/kubernetes/nginx-deployment.yaml
   target:
     kind: local
   config:

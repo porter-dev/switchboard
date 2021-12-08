@@ -13,7 +13,6 @@ import (
 )
 
 type Driver struct {
-	agent       *Agent
 	source      *Source
 	target      *Target
 	base        map[string]interface{}
@@ -52,7 +51,7 @@ func NewKubernetesDriver(resource *models.Resource, opts *drivers.SharedDriverOp
 }
 
 func (d *Driver) GetAgent() *Agent {
-	return d.agent
+	return d.target.Agent
 }
 
 func (d *Driver) initSource(source *Source, opts *drivers.SharedDriverOpts) error {
@@ -113,7 +112,7 @@ func (d *Driver) Apply(resource *models.Resource) (*models.Resource, error) {
 		return nil, err
 	}
 
-	res, err := d.agent.Apply(&ApplyOpts{
+	res, err := d.target.Agent.Apply(&ApplyOpts{
 		Config: config,
 		Base:   d.base,
 		Target: d.target,
