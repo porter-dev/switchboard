@@ -50,6 +50,7 @@ type WorkerHook interface {
 	PreApply() error
 	DataQueries() map[string]interface{}
 	PostApply(populatedData map[string]interface{}) error
+	OnError(err error)
 }
 
 func (w *Worker) RegisterHook(name string, hook WorkerHook) error {
@@ -134,12 +135,14 @@ func (w *Worker) Apply(group *types.ResourceGroup, opts *types.ApplyOpts) error 
 	})
 
 	if err != nil {
+		w.runErrorHooks(err)
 		return err
 	}
 
 	err = exec.Execute(nodes, execFunc)
 
 	if err != nil {
+		w.runErrorHooks(err)
 		return err
 	}
 
@@ -151,6 +154,7 @@ func (w *Worker) Apply(group *types.ResourceGroup, opts *types.ApplyOpts) error 
 		resourceOutput, err := lookupTable[resource.Name].Output()
 
 		if err != nil {
+			w.runErrorHooks(err)
 			return err
 		}
 
@@ -175,6 +179,12 @@ func (w *Worker) Apply(group *types.ResourceGroup, opts *types.ApplyOpts) error 
 	}
 
 	return nil
+}
+
+func (w *Worker) runErrorHooks(err error) {
+	for _, hook := range w.hooksTable {
+		hook.OnError(err)
+	}
 }
 
 func getExecFunc(opts *drivers.SharedDriverOpts) exec.ExecFunc {
