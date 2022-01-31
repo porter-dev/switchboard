@@ -1,7 +1,6 @@
 package exec
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/porter-dev/switchboard/pkg/models"
@@ -55,11 +54,6 @@ func GetExecNodes(group *models.ResourceGroup) ([]*ExecNode, error) {
 	resourceMap := make(map[string]*ExecNode)
 
 	for _, resource := range group.Resources {
-		// check that name does not already exist
-		if _, exists := resourceMap[resource.Name]; exists {
-			return nil, fmt.Errorf("duplicate resource name encountered for \"%s\"", resource.Name)
-		}
-
 		resourceMap[resource.Name] = &ExecNode{
 			resource: resource,
 			parents:  make([]*ExecNode, 0),
@@ -72,18 +66,11 @@ func GetExecNodes(group *models.ResourceGroup) ([]*ExecNode, error) {
 
 	for _, execNode := range resourceMap {
 		for _, dependency := range execNode.resource.Dependencies {
-			// check that the resource described by the dependency exists
-			if _, exists := resourceMap[dependency]; !exists {
-				return nil, fmt.Errorf("parent resource \"%s\" does not exist", dependency)
-			}
-
 			execNode.parents = append(execNode.parents, resourceMap[dependency])
 		}
 
 		res = append(res, execNode)
 	}
-
-	// TODO: check against circular dependencies
 
 	return res, nil
 }
