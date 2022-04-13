@@ -132,6 +132,14 @@ func (w *Worker) Apply(group *types.ResourceGroup, opts *types.ApplyOpts) error 
 		lookupTable[resource.Name] = driver
 	}
 
+	depResolver := exec.NewDependencyResolver(resources)
+	err := depResolver.Resolve()
+
+	if err != nil {
+		w.runErrorHooks(err)
+		return err
+	}
+
 	nodes, err := exec.GetExecNodes(&models.ResourceGroup{
 		APIVersion: group.Version,
 		Resources:  resources,
