@@ -12,16 +12,20 @@ import (
 	"github.com/rs/zerolog"
 )
 
+type hookWithName struct {
+	WorkerHook
+	name string
+}
 type Worker struct {
 	driversTable  map[string]drivers.DriverFunc
-	hooksTable    map[string]WorkerHook
+	hooks         []hookWithName
 	defaultDriver string
 }
 
 func NewWorker() *Worker {
 	return &Worker{
 		driversTable:  make(map[string]drivers.DriverFunc),
-		hooksTable:    make(map[string]WorkerHook),
+		hooks:         make([]hookWithName, 0),
 		defaultDriver: "",
 	}
 }
@@ -54,11 +58,10 @@ type WorkerHook interface {
 }
 
 func (w *Worker) RegisterHook(name string, hook WorkerHook) error {
-	if _, ok := w.hooksTable[name]; ok {
-		return fmt.Errorf("hook with name '%s' already exists", name)
-	}
-
-	w.hooksTable[name] = hook
+	w.hooks = append(w.hooks, hookWithName{
+		WorkerHook: hook,
+		name:       name,
+	})
 
 	return nil
 }
@@ -66,11 +69,11 @@ func (w *Worker) RegisterHook(name string, hook WorkerHook) error {
 // Apply creates a ResourceGroup
 func (w *Worker) Apply(group *types.ResourceGroup, opts *types.ApplyOpts) error {
 	// run any pre-apply hooks
-	for name, hook := range w.hooksTable {
-		err := hook.PreApply()
+	for _, hook := range w.hooks {
+		err := hook.WorkerHook.PreApply()
 
 		if err != nil {
-			return fmt.Errorf("error running hook '%s': %v", name, err)
+			return fmt.Errorf("error running hook '%s': %v", hook.name, err)
 		}
 	}
 
@@ -162,19 +165,19 @@ func (w *Worker) Apply(group *types.ResourceGroup, opts *types.ApplyOpts) error 
 	}
 
 	// run any post-apply hooks
-	for name, hook := range w.hooksTable {
+	for _, hook := range w.hooks {
 		// get the data to query
-		dataQueries := hook.DataQueries()
+		dataQueries := hook.WorkerHook.DataQueries()
 		dataRes, err := query.PopulateQueries(dataQueries, allOutputData)
 
 		if err != nil {
-			return fmt.Errorf("error running hook '%s': %v", name, err)
+			return fmt.Errorf("error running hook '%s': %v", hook.name, err)
 		}
 
-		err = hook.PostApply(dataRes)
+		err = hook.WorkerHook.PostApply(dataRes)
 
 		if err != nil {
-			return fmt.Errorf("error running hook '%s': %v", name, err)
+			return fmt.Errorf("error running hook '%s': %v", hook.name, err)
 		}
 	}
 
@@ -182,8 +185,8 @@ func (w *Worker) Apply(group *types.ResourceGroup, opts *types.ApplyOpts) error 
 }
 
 func (w *Worker) runErrorHooks(err error) {
-	for _, hook := range w.hooksTable {
-		hook.OnError(err)
+	for _, hook := range w.hooks {
+		hook.WorkerHook.OnError(err)
 	}
 }
 
