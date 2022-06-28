@@ -1,6 +1,7 @@
 package exec
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/porter-dev/switchboard/pkg/models"
@@ -12,6 +13,7 @@ type ExecFunc func(resource *models.Resource) error
 type ExecNode struct {
 	isExecFinished bool
 	isExecStarted  bool
+	execError      error
 	parents        []*ExecNode
 	resource       *models.Resource
 }
@@ -30,6 +32,19 @@ func (e *ExecNode) IsStarted() bool {
 
 func (e *ExecNode) SetStarted() {
 	e.isExecStarted = true
+}
+
+func (e *ExecNode) SetFinishedWithError(err error) {
+	e.isExecFinished = true
+	e.execError = err
+}
+
+func (e *ExecNode) ExecError() error {
+	return e.execError
+}
+
+func (e *ExecNode) ResourceName() string {
+	return e.resource.Name
 }
 
 func (e *ExecNode) ShouldStart() bool {
@@ -77,8 +92,7 @@ func GetExecNodes(group *models.ResourceGroup) ([]*ExecNode, error) {
 
 // Execute simply calls exec on nodes in parallel, in batches. This could be much more
 // efficient.
-func Execute(nodes []*ExecNode, execFunc ExecFunc) error {
-	var outErr error
+func Execute(nodes []*ExecNode, execFunc ExecFunc) {
 	for {
 		var wg sync.WaitGroup
 
@@ -92,10 +106,18 @@ func Execute(nodes []*ExecNode, execFunc ExecFunc) error {
 					defer wg.Done()
 
 					nodeP.SetStarted()
+
+					for _, parentNode := range nodeP.parents {
+						if parentNode.ExecError() != nil {
+							nodeP.SetFinishedWithError(fmt.Errorf("dependency '%s' failed", parentNode.resource.Name))
+							return
+						}
+					}
+
 					err := execFunc(nodeP.resource)
 
 					if err != nil {
-						outErr = err
+						nodeP.SetFinishedWithError(err)
 						return
 					}
 
@@ -104,18 +126,12 @@ func Execute(nodes []*ExecNode, execFunc ExecFunc) error {
 			}
 		}
 
-		if outErr != nil {
-			break
-		}
-
 		wg.Wait()
 
 		if allFinished := areAllNodesFinished(nodes); allFinished {
 			break
 		}
 	}
-
-	return outErr
 }
 
 func areAllNodesFinished(nodes []*ExecNode) bool {
