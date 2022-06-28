@@ -55,6 +55,7 @@ type WorkerHook interface {
 	DataQueries() map[string]interface{}
 	PostApply(populatedData map[string]interface{}) error
 	OnError(err error)
+	OnConsolidatedErrors(allErrors map[string]error)
 }
 
 func (w *Worker) RegisterHook(name string, hook WorkerHook) error {
@@ -150,11 +151,22 @@ func (w *Worker) Apply(group *types.ResourceGroup, opts *types.ApplyOpts) error 
 		return err
 	}
 
-	err = exec.Execute(nodes, execFunc)
+	exec.Execute(nodes, execFunc)
 
-	if err != nil {
-		w.runErrorHooks(err)
-		return err
+	allErrors := make(map[string]error)
+
+	for _, node := range nodes {
+		if node.ExecError() != nil {
+			allErrors[node.ResourceName()] = node.ExecError()
+		}
+	}
+
+	if len(allErrors) > 0 {
+		for _, hook := range w.hooks {
+			hook.OnConsolidatedErrors(allErrors)
+		}
+
+		return fmt.Errorf("errors were encountered with one or more resources")
 	}
 
 	// TODO: place in separate method, case on no hooks registered
