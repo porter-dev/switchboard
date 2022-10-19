@@ -7,9 +7,9 @@ type ResourceGroup struct {
 
 type Resource struct {
 	Name      string                 `json:"name"`
-	Driver    string                 `json:"driver"`
-	Source    map[string]interface{} `json:"source"`
-	Target    map[string]interface{} `json:"target"`
-	Config    map[string]interface{} `json:"config"`
-	DependsOn []string               `json:"depends_on"`
+	Driver    string                 `json:"driver,omitempty"`
+	Source    map[string]interface{} `json:"source,omitempty"`
+	Target    map[string]interface{} `json:"target,omitempty"`
+	Config    map[string]interface{} `json:"config,omitempty"`
+	DependsOn []string               `json:"depends_on,omitempty"`
 }
