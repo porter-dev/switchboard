@@ -27,13 +27,28 @@
             "type": "boolean",
             "description": "Whether the variable should be randomly generated",
             "default": false
-          },
-          "value": {
-            "type": ["string", "null"],
-            "description": "Predefined value of the variable, when random is false"
           }
         },
-        "required": ["name"]
+        "if": {
+          "properties": {
+            "random": {
+              "const": false
+            }
+          }
+        },
+        "then": {
+          "properties": {
+            "value": {
+              "type": "string",
+              "description": "Predefined value of the variable, when random is false"
+            }
+          },
+          "required": ["name", "value"]
+        },
+        "else": {
+          "required": ["name"]
+        },
+        "additionalProperties": false
       }
     },
     "env_groups": {

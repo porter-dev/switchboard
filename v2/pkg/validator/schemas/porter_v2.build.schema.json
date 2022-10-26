@@ -67,14 +67,16 @@
         }
       },
       "then": {
-        "context": {
-          "type": "string",
-          "description": "The context (working directory) of the build",
-          "default": "."
-        },
-        "dockerfile": {
-          "type": "string",
-          "description": "The path to the Dockerfile"
+        "properties": {
+          "context": {
+            "type": "string",
+            "description": "The context (working directory) of the build",
+            "default": "."
+          },
+          "dockerfile": {
+            "type": "string",
+            "description": "The path to the Dockerfile"
+          }
         },
         "required": ["dockerfile"]
       }
