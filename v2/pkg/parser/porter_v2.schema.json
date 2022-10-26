@@ -1,0 +1,213 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "The version of the schema",
+      "pattern": "^v[1-9][0-9]*$"
+    },
+    "variables": {
+      "type": "array",
+      "description": "The variables to use in the template",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the variable",
+            "minLength": 1
+          },
+          "once": {
+            "type": "boolean",
+            "description": "Whether the variable should be created only on first run",
+            "default": false
+          },
+          "random": {
+            "type": "boolean",
+            "description": "Whether the variable should be randomly generated",
+            "default": false
+          },
+          "value": {
+            "type": ["string", "null"],
+            "description": "Predefined value of the variable, when random is false"
+          }
+        },
+        "required": ["name"]
+      }
+    },
+    "env_groups": {
+      "type": "array",
+      "description": "The environment groups that should be cloned into the preview environment's namespace",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the environment group"
+          },
+          "clone_from": {
+            "type": "string",
+            "description": "The namespace and name of the environment group to clone from"
+          }
+        },
+        "required": ["name", "clone_from"]
+      }
+    },
+    "builds": {
+      "type": "array",
+      "description": "The list of builds for this preview environment",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the build"
+          },
+          "context": {
+            "type": "string",
+            "description": "The context (working directory) of the build",
+            "default": "."
+          },
+          "method": {
+            "type": "string",
+            "description": "The method to use for the build",
+            "enum": ["pack", "docker", "registry"]
+          },
+          "builder": {
+            "type": "string",
+            "description": "The builder to use for the build"
+          },
+          "buildpacks": {
+            "type": "array",
+            "description": "The buildpacks to use for the build",
+            "items": {
+              "type": "string"
+            }
+          },
+          "dockerfile": {
+            "type": "string",
+            "description": "The path to the Dockerfile"
+          },
+          "image": {
+            "type": "string",
+            "description": "The image to use for the build"
+          },
+          "env": {
+            "type": "object",
+            "description": "The environment variables to use for the build",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "env_groups": {
+            "type": "array",
+            "description": "The environment groups to use for the build",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "method": {
+                  "const": "pack"
+                }
+              }
+            },
+            "then": {
+              "required": ["builder"]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "method": {
+                  "const": "docker"
+                }
+              }
+            },
+            "then": {
+              "required": ["dockerfile"]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "method": {
+                  "const": "registry"
+                }
+              }
+            },
+            "then": {
+              "required": ["image"]
+            }
+          }
+        ],
+        "required": ["name", "method"]
+      }
+    },
+    "apps": {
+      "type": "array",
+      "description": "The list of apps for this preview environment",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the app"
+          },
+          "depends_on": {
+            "type": "array",
+            "description": "The apps that this app depends on",
+            "items": {
+              "type": "string"
+            }
+          },
+          "type": {
+            "type": "string",
+            "description": "The type of the app",
+            "enum": ["web", "worker", "job"]
+          },
+          "build": {
+            "type": "object",
+            "description": "The name of the build to use for the app"
+          },
+          "deploy": {
+            "type": "object",
+            "description": "The deploy configuration for the app",
+            "properties": {
+              "method": {
+                "type": "string",
+                "description": "The method to use for the deploy",
+                "enum": ["docker", "registry"]
+              },
+              "image": {
+                "type": "string",
+                "description": "The image to use for the deploy"
+              },
+              "env": {
+                "type": "object",
+                "description": "The environment variables to use for the deploy",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "env_groups": {
+                "type": "array",
+                "description": "The environment groups to use for the deploy",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "addons": {}
+  },
+  "required": ["version"]
+}
