@@ -1,36 +1,36 @@
 package types
 
 type Variable struct {
-	Name   *YAMLNodeMetadata[string] `json:"name" validate:"required,unique"`
-	Value  *YAMLNodeMetadata[string] `json:"value" validate:"required_if=Random false"`
-	Once   *YAMLNodeMetadata[bool]   `json:"once"`
-	Random *YAMLNodeMetadata[bool]   `json:"random"`
+	Name   *YAMLNode[string] `json:"name" validate:"required,unique"`
+	Value  *YAMLNode[string] `json:"value" validate:"required_if=Random false"`
+	Once   *YAMLNode[bool]   `json:"once"`
+	Random *YAMLNode[bool]   `json:"random"`
 }
 
 type EnvGroup struct {
-	Name      *YAMLNodeMetadata[string] `json:"name" validate:"required"`
-	CloneFrom *YAMLNodeMetadata[string] `json:"clone_from" validate:"required"`
+	Name      *YAMLNode[string] `json:"name" validate:"required"`
+	CloneFrom *YAMLNode[string] `json:"clone_from" validate:"required"`
 }
 
 type Build struct {
-	Name       *YAMLNodeMetadata[string]                            `json:"name" validate:"required"`
-	Context    *YAMLNodeMetadata[string]                            `json:"context" validate:"dir"`
-	Method     *YAMLNodeMetadata[string]                            `json:"method" validate:"required,oneof=pack docker registry"`
-	Builder    *YAMLNodeMetadata[string]                            `json:"builder" validate:"required_if=Method pack"`
-	Buildpacks []*YAMLNodeMetadata[string]                          `json:"buildpacks"`
-	Dockerfile *YAMLNodeMetadata[string]                            `json:"dockerfile" validate:"required_if=Method docker"`
-	Image      *YAMLNodeMetadata[string]                            `json:"image" validate:"required_if=Method registry"`
-	Env        map[*YAMLNodeMetadata[string]]*YAMLNodeMetadata[any] `json:"env"`
-	EnvGroups  []*YAMLNodeMetadata[string]                          `json:"env_groups"`
+	Name       *YAMLNode[string]     `json:"name" validate:"required"`
+	Context    *YAMLNode[string]     `json:"context" validate:"dir"`
+	Method     *YAMLNode[string]     `json:"method" validate:"required,oneof=pack docker registry"`
+	Builder    *YAMLNode[string]     `json:"builder" validate:"required_if=Method pack"`
+	Buildpacks []*YAMLNode[string]   `json:"buildpacks"`
+	Dockerfile *YAMLNode[string]     `json:"dockerfile" validate:"required_if=Method docker"`
+	Image      *YAMLNode[string]     `json:"image" validate:"required_if=Method registry"`
+	Env        *YAMLMapInterfaceNode `json:"env"`
+	EnvGroups  []*YAMLNode[string]   `json:"env_groups"`
 }
 
 type AddonResource struct {
-	Name      *YAMLNodeMetadata[string]                            `json:"name" validate:"required,unique"`
-	DependsOn []*YAMLNodeMetadata[string]                          `json:"depends_on"`
-	Type      *YAMLNodeMetadata[string]                            `json:"type" validate:"required"`
-	ChartURL  *YAMLNodeMetadata[string]                            `json:"chart_url" validate:"url"`
-	Version   *YAMLNodeMetadata[string]                            `json:"version"`
-	Deploy    map[*YAMLNodeMetadata[string]]*YAMLNodeMetadata[any] `json:"deploy"`
+	Name      *YAMLNode[string]     `json:"name" validate:"required,unique"`
+	DependsOn []*YAMLNode[string]   `json:"depends_on"`
+	Type      *YAMLNode[string]     `json:"type" validate:"required"`
+	ChartURL  *YAMLNode[string]     `json:"chart_url" validate:"url"`
+	Version   *YAMLNode[string]     `json:"version"`
+	Deploy    *YAMLMapInterfaceNode `json:"deploy"`
 }
 
 // type AppResourceBuild struct {
@@ -47,20 +47,20 @@ type AddonResource struct {
 // }
 
 type AppResource struct {
-	Name      *YAMLNodeMetadata[string]                            `json:"name" validate:"required,unique"`
-	DependsOn []*YAMLNodeMetadata[string]                          `json:"depends_on"`
-	Type      *YAMLNodeMetadata[string]                            `json:"type" validate:"required,oneof=web worker job"`
-	ChartURL  *YAMLNodeMetadata[string]                            `json:"chart_url" validate:"url"`
-	Version   *YAMLNodeMetadata[string]                            `json:"version"`
-	Deploy    map[*YAMLNodeMetadata[string]]*YAMLNodeMetadata[any] `json:"deploy"`
-	Build     map[*YAMLNodeMetadata[string]]*YAMLNodeMetadata[any] `json:"build"`
+	Name      *YAMLNode[string]     `json:"name" validate:"required,unique"`
+	DependsOn []*YAMLNode[string]   `json:"depends_on"`
+	Type      *YAMLNode[string]     `json:"type" validate:"required,oneof=web worker job"`
+	ChartURL  *YAMLNode[string]     `json:"chart_url" validate:"url"`
+	Version   *YAMLNode[string]     `json:"version"`
+	Deploy    *YAMLMapInterfaceNode `json:"deploy"`
+	Build     *YAMLMapInterfaceNode `json:"build"`
 }
 
 type PorterYAML struct {
-	Version   *YAMLNodeMetadata[string] `json:"version" validate:"required"`
-	Variables []*Variable               `json:"variables"`
-	EnvGroups []*EnvGroup               `json:"env_groups"`
-	Builds    []*Build                  `json:"builds"`
-	Apps      []*AppResource            `json:"apps"`
-	Addons    []*AddonResource          `json:"addons"`
+	Version   *YAMLNode[string] `json:"version" validate:"required"`
+	Variables []*Variable       `json:"variables"`
+	EnvGroups []*EnvGroup       `json:"env_groups"`
+	Builds    []*Build          `json:"builds"`
+	Apps      []*AppResource    `json:"apps"`
+	Addons    []*AddonResource  `json:"addons"`
 }

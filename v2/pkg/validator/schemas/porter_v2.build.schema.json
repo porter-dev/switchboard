@@ -1,0 +1,101 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The name of the build"
+    },
+    "method": {
+      "type": "string",
+      "description": "The method to use for the build",
+      "enum": ["pack", "docker", "registry"]
+    },
+    "env": {
+      "type": "object",
+      "description": "The environment variables to use for the build",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "env_groups": {
+      "type": "array",
+      "description": "The environment groups to use for the build",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "method": {
+            "const": "pack"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "context": {
+            "type": "string",
+            "description": "The context (working directory) of the build",
+            "default": "."
+          },
+          "builder": {
+            "type": "string",
+            "description": "The builder to use for the build"
+          },
+          "buildpacks": {
+            "type": "array",
+            "description": "The buildpacks to use for the build",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["builder"]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "method": {
+            "const": "docker"
+          }
+        }
+      },
+      "then": {
+        "context": {
+          "type": "string",
+          "description": "The context (working directory) of the build",
+          "default": "."
+        },
+        "dockerfile": {
+          "type": "string",
+          "description": "The path to the Dockerfile"
+        },
+        "required": ["dockerfile"]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "method": {
+            "const": "registry"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "image": {
+            "type": "string",
+            "description": "The image to use for the build"
+          }
+        },
+        "required": ["image"]
+      }
+    }
+  ]
+}

@@ -1,0 +1,143 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "The version of the schema",
+      "pattern": "^v[1-9][0-9]*$"
+    },
+    "variables": {
+      "type": "array",
+      "description": "The variables to use in the template",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the variable",
+            "minLength": 1
+          },
+          "once": {
+            "type": "boolean",
+            "description": "Whether the variable should be created only on first run",
+            "default": false
+          },
+          "random": {
+            "type": "boolean",
+            "description": "Whether the variable should be randomly generated",
+            "default": false
+          },
+          "value": {
+            "type": ["string", "null"],
+            "description": "Predefined value of the variable, when random is false"
+          }
+        },
+        "required": ["name"]
+      }
+    },
+    "env_groups": {
+      "type": "array",
+      "description": "The environment groups that should be cloned into the preview environment's namespace",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the environment group"
+          },
+          "clone_from": {
+            "type": "string",
+            "description": "The namespace and name of the environment group to clone from"
+          }
+        },
+        "required": ["name", "clone_from"]
+      }
+    },
+    "builds": {
+      "type": "array",
+      "description": "The list of builds for this preview environment",
+      "items": {
+        "$ref": "porter_v2.build.schema.json",
+        "required": ["name", "method"]
+      }
+    },
+    "apps": {
+      "type": "array",
+      "description": "The list of apps for this preview environment",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the app"
+          },
+          "depends_on": {
+            "type": "array",
+            "description": "The apps that this app depends on",
+            "items": {
+              "type": "string",
+              "minItems": 1
+            }
+          },
+          "type": {
+            "type": "string",
+            "description": "The type of the app",
+            "enum": ["web", "worker", "job"],
+            "default": "web"
+          },
+          "build": {
+            "type": "object",
+            "description": "The name of the build to use for the app",
+            "additionalProperties": true,
+            "oneOf": [
+              {
+                "$ref": "porter_v2.build.schema.json",
+                "required": ["method"]
+              },
+              {
+                "properties": {
+                  "ref": {
+                    "type": "string",
+                    "description": "The build ID from the builds section to use for this app"
+                  }
+                },
+                "required": ["ref"]
+              }
+            ]
+          },
+          "deploy": {
+            "type": "object",
+            "description": "The deploy configuration for the app",
+            "additionalProperties": true
+          }
+        },
+        "required": ["name"]
+      }
+    },
+    "addons": {
+      "type": "array",
+      "description": "The list of addons for this preview environment",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the addon"
+          },
+          "type": {
+            "type": "string",
+            "description": "The type of the addon"
+          },
+          "deploy": {
+            "type": "object",
+            "description": "The deploy configuration for the addon",
+            "additionalProperties": true
+          }
+        },
+        "required": ["name", "type"]
+      }
+    }
+  },
+  "required": ["version"]
+}
