@@ -5,6 +5,7 @@ type Variable struct {
 	Value  *YAMLNode[string] `json:"value" validate:"required_if=Random false"`
 	Once   *YAMLNode[bool]   `json:"once"`
 	Random *YAMLNode[bool]   `json:"random"`
+	Length *YAMLNode[uint]   `json:"length"`
 }
 
 type EnvGroup struct {

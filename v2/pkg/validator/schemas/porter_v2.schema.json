@@ -27,6 +27,10 @@
             "type": "boolean",
             "description": "Whether the variable should be randomly generated",
             "default": false
+          },
+          "value": {
+            "type": "string",
+            "description": "Predefined value of the variable, when random is false"
           }
         },
         "if": {
@@ -37,16 +41,24 @@
           }
         },
         "then": {
-          "properties": {
-            "value": {
-              "type": "string",
-              "description": "Predefined value of the variable, when random is false"
-            }
-          },
-          "required": ["name", "value"]
+          "required": ["name", "value"],
+          "not": {
+            "required": ["random"]
+          }
         },
         "else": {
-          "required": ["name"]
+          "properties": {
+            "length": {
+              "type": "integer",
+              "description": "Length of the random string",
+              "minimum": 8,
+              "default": 8
+            }
+          },
+          "required": ["name", "random"],
+          "not": {
+            "required": ["value"]
+          }
         },
         "additionalProperties": false
       }
