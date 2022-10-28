@@ -25,32 +25,10 @@ type Build struct {
 	EnvGroups  []*YAMLNode[string]                     `yaml:"env_groups"`
 }
 
-type AddonResource struct {
+type Resource struct {
 	Name      *YAMLNode[string]                    `yaml:"name" validate:"required,unique"`
 	DependsOn []*YAMLNode[string]                  `yaml:"depends_on"`
 	Type      *YAMLNode[string]                    `yaml:"type" validate:"required"`
-	ChartURL  *YAMLNode[string]                    `yaml:"chart_url" validate:"url"`
-	Version   *YAMLNode[string]                    `yaml:"version"`
-	Deploy    map[*YAMLNode[string]]*YAMLNode[any] `yaml:"deploy"`
-}
-
-// type AppResourceBuild struct {
-// 	Name       string         `yaml:"name" mapstructure:"name"`
-// 	Context    string         `yaml:"context" mapstructure:"context"`
-// 	Method     string         `yaml:"method" mapstructure:"method"`
-// 	Builder    string         `yaml:"builder" mapstructure:"builder"`
-// 	Buildpacks []string       `yaml:"buildpacks" mapstructure:"buildpacks"`
-// 	Dockerfile string         `yaml:"dockerfile" mapstructure:"dockerfile"`
-// 	Image      string         `yaml:"image" mapstructure:"image"`
-// 	Env        map[string]any `yaml:"env" mapstructure:"env"`
-// 	EnvGroups  []string       `yaml:"env_groups" mapstructure:"env_groups"`
-// 	Ref        string         `yaml:"ref" mapstructure:"ref"`
-// }
-
-type AppResource struct {
-	Name      *YAMLNode[string]                    `yaml:"name" validate:"required,unique"`
-	DependsOn []*YAMLNode[string]                  `yaml:"depends_on"`
-	Type      *YAMLNode[string]                    `yaml:"type" validate:"required,oneof=web worker job"`
 	ChartURL  *YAMLNode[string]                    `yaml:"chart_url" validate:"url"`
 	Version   *YAMLNode[string]                    `yaml:"version"`
 	Deploy    map[*YAMLNode[string]]*YAMLNode[any] `yaml:"deploy"`
@@ -58,10 +36,10 @@ type AppResource struct {
 }
 
 type PorterYAML struct {
-	Version   *YAMLNode[string]           `yaml:"version" validate:"required"`
-	Variables *YAMLNode[[]*Variable]      `yaml:"variables"`
-	EnvGroups *YAMLNode[[]*EnvGroup]      `yaml:"env_groups"`
-	Builds    *YAMLNode[[]*Build]         `yaml:"builds"`
-	Apps      *YAMLNode[[]*AppResource]   `yaml:"apps"`
-	Addons    *YAMLNode[[]*AddonResource] `yaml:"addons"`
+	Version   *YAMLNode[string]      `yaml:"version" validate:"required"`
+	Variables *YAMLNode[[]*Variable] `yaml:"variables"`
+	EnvGroups *YAMLNode[[]*EnvGroup] `yaml:"env_groups"`
+	Builds    *YAMLNode[[]*Build]    `yaml:"builds"`
+	Apps      *YAMLNode[[]*Resource] `yaml:"apps"`
+	Addons    *YAMLNode[[]*Resource] `yaml:"addons"`
 }
