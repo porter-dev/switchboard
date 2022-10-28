@@ -26,20 +26,20 @@ type Build struct {
 }
 
 type Resource struct {
-	Name      *YAMLNode[string]                    `yaml:"name" validate:"required,unique"`
-	DependsOn []*YAMLNode[string]                  `yaml:"depends_on"`
-	Type      *YAMLNode[string]                    `yaml:"type" validate:"required"`
-	ChartURL  *YAMLNode[string]                    `yaml:"chart_url" validate:"url"`
-	Version   *YAMLNode[string]                    `yaml:"version"`
-	Deploy    map[*YAMLNode[string]]*YAMLNode[any] `yaml:"deploy"`
-	Build     map[*YAMLNode[string]]*YAMLNode[any] `yaml:"build"`
+	Name      *YAMLNode[string]                               `yaml:"name" validate:"required,unique"`
+	DependsOn []*YAMLNode[string]                             `yaml:"depends_on"`
+	Type      *YAMLNode[string]                               `yaml:"type" validate:"required"`
+	ChartURL  *YAMLNode[string]                               `yaml:"chart_url" validate:"url"`
+	Version   *YAMLNode[string]                               `yaml:"version"`
+	Build     *YAMLNode[map[*YAMLNode[string]]*YAMLNode[any]] `yaml:"build"`
+	Deploy    *YAMLNode[map[*YAMLNode[string]]*YAMLNode[any]] `yaml:"deploy"`
 }
 
 type PorterYAML struct {
-	Version   *YAMLNode[string]      `yaml:"version" validate:"required"`
-	Variables *YAMLNode[[]*Variable] `yaml:"variables"`
-	EnvGroups *YAMLNode[[]*EnvGroup] `yaml:"env_groups"`
-	Builds    *YAMLNode[[]*Build]    `yaml:"builds"`
-	Apps      *YAMLNode[[]*Resource] `yaml:"apps"`
-	Addons    *YAMLNode[[]*Resource] `yaml:"addons"`
+	Version   *YAMLNode[string]                 `yaml:"version" validate:"required"`
+	Variables *YAMLNode[[]*Variable]            `yaml:"variables"`
+	EnvGroups *YAMLNode[[]*EnvGroup]            `yaml:"env_groups"`
+	Builds    *YAMLNode[[]*Build]               `yaml:"builds"`
+	Apps      *YAMLNode[[]*YAMLNode[*Resource]] `yaml:"apps"`
+	Addons    *YAMLNode[[]*YAMLNode[*Resource]] `yaml:"addons"`
 }

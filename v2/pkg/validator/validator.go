@@ -201,10 +201,10 @@ func validateV2Variables(variables []*types.Variable) error {
 	return nil
 }
 
-func validateV2Apps(apps []*types.Resource) error {
+func validateV2Apps(apps []*types.YAMLNode[*types.Resource]) error {
 	return nil
 }
 
-func validateV2Addons(addons []*types.Resource) error {
+func validateV2Addons(addons []*types.YAMLNode[*types.Resource]) error {
 	return nil
 }

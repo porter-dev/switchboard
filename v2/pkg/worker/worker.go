@@ -22,7 +22,7 @@ func NewWorker() *Worker {
 	return &Worker{
 		driversTable: make(map[string]types.Driver),
 		// hooks:         make([]hookWithName, 0),
-		defaultDriver: "",
+		defaultDriver: "default",
 	}
 }
 
@@ -86,48 +86,34 @@ func (w *Worker) Apply(parsed *types.PorterYAML) error {
 
 	execFunc := getExecFunc(w.driversTable)
 
-	// var resources []*types.Resource
+	var resources []*types.YAMLNode[*types.Resource]
 
-	// for _, resource := range Resources {
-	// 	modelResource := &models.Resource{
-	// 		Name:         resource.Name,
-	// 		Driver:       resource.Driver,
-	// 		Config:       resource.Config,
-	// 		Source:       resource.Source,
-	// 		Target:       resource.Target,
-	// 		Dependencies: resource.DependsOn,
-	// 	}
+	resources = append(resources, parsed.Apps.GetValue()...)
+	resources = append(resources, parsed.Addons.GetValue()...)
 
-	// 	resources = append(resources, modelResource)
+	for _, resource := range resources {
+		// 	modelResource := &models.Resource{
+		// 		Name:         resource.Name,
+		// 		Driver:       resource.Driver,
+		// 		Config:       resource.Config,
+		// 		Source:       resource.Source,
+		// 		Target:       resource.Target,
+		// 		Dependencies: resource.DependsOn,
+		// 	}
 
-	// 	// var driver drivers.Driver
-	// 	var err error
+		// 	resources = append(resources, modelResource)
 
-	// 	// switch on the driver type to construct the driver
-	// 	if len(w.driversTable) == 0 {
-	// 		return fmt.Errorf("no drivers registered")
-	// 	} else if resource.Driver == "" {
-	// 		driver, err = w.driversTable[w.defaultDriver](modelResource, sharedDriverOpts)
+		var driver types.Driver
 
-	// 		// TODO: append errors, don't exit here
-	// 		if err != nil {
-	// 			return err
-	// 		}
-	// 	} else if driverFunc, ok := w.driversTable[resource.Driver]; ok {
-	// 		driver, err = driverFunc(modelResource, sharedDriverOpts)
+		// switch on the driver type to construct the driver
+		if len(w.driversTable) == 0 {
+			return fmt.Errorf("no drivers registered")
+		} else {
+			driver = w.driversTable[w.defaultDriver]
+		}
 
-	// 		// TODO: append errors, don't exit here
-	// 		if err != nil {
-	// 			return err
-	// 		}
-	// 	} else {
-	// 		// TODO: append errors, don't exit here
-	// 		err = fmt.Errorf("no driver found with name '%s'", resource.Driver)
-	// 		return err
-	// 	}
-
-	// 	lookupTable[resource.Name] = driver
-	// }
+		w.driversTable[resource.GetValue().Name.GetValue()] = driver
+	}
 
 	// depResolver := exec.NewDependencyResolver(resources)
 	// err := depResolver.Resolve()
@@ -204,14 +190,14 @@ func (w *Worker) Apply(parsed *types.PorterYAML) error {
 // }
 
 func getExecFunc(driverLookupTable map[string]types.Driver) exec.ExecFunc {
-	return func(resource *types.Resource) error {
+	return func(resource *types.YAMLNode[*types.Resource]) error {
 		// opts.Logger.Info().Msg(
 		// 	fmt.Sprintf("running apply for resource %s", resource.Name),
 		// )
 
 		// lookupTable := *opts.DriverLookupTable
 
-		err := driverLookupTable[resource.Name.GetValue()].Apply(resource)
+		err := driverLookupTable[resource.GetValue().Name.GetValue()].Apply(resource)
 
 		if err != nil {
 			return err

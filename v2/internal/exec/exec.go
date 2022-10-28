@@ -8,14 +8,14 @@ import (
 )
 
 // TODO: this exec func should probably accept channels or something
-type ExecFunc func(resource *types.Resource) error
+type ExecFunc func(resource *types.YAMLNode[*types.Resource]) error
 
 type ExecNode struct {
 	isExecFinished bool
 	isExecStarted  bool
 	execError      error
 	parents        []*ExecNode
-	resource       *types.Resource
+	resource       *types.YAMLNode[*types.Resource]
 }
 
 func (e *ExecNode) IsFinished() bool {
@@ -64,12 +64,12 @@ func GetExecNodes(parsed *types.PorterYAML) ([]*ExecNode, error) {
 	// create a map of resource names to exec nodes
 	resourceMap := make(map[string]*ExecNode)
 
-	var resources []*types.Resource
+	var resources []*types.YAMLNode[*types.Resource]
 	resources = append(resources, parsed.Apps.GetValue()...)
 	resources = append(resources, parsed.Addons.GetValue()...)
 
 	for _, resource := range resources {
-		resourceMap[resource.Name.GetValue()] = &ExecNode{
+		resourceMap[resource.GetValue().Name.GetValue()] = &ExecNode{
 			resource: resource,
 		}
 	}
@@ -79,7 +79,7 @@ func GetExecNodes(parsed *types.PorterYAML) ([]*ExecNode, error) {
 	res := make([]*ExecNode, 0)
 
 	for _, execNode := range resourceMap {
-		for _, dependency := range execNode.resource.DependsOn {
+		for _, dependency := range execNode.resource.GetValue().DependsOn {
 			execNode.parents = append(execNode.parents, resourceMap[dependency.GetValue()])
 		}
 
@@ -108,7 +108,7 @@ func Execute(nodes []*ExecNode, execFunc ExecFunc) {
 
 					for _, parentNode := range nodeP.parents {
 						if parentNode.ExecError() != nil {
-							nodeP.SetFinishedWithError(fmt.Errorf("dependency '%s' failed", parentNode.resource.Name))
+							nodeP.SetFinishedWithError(fmt.Errorf("dependency '%s' failed", parentNode.resource.GetValue().Name.GetValue()))
 							return
 						}
 					}

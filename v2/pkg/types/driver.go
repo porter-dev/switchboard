@@ -1,8 +1,8 @@
 package types
 
 type Driver interface {
-	PreApply(*Resource) error
-	Apply(*Resource) error
-	PostApply(*Resource) error
-	OnError(*Resource, error)
+	PreApply(*YAMLNode[*Resource]) error
+	Apply(*YAMLNode[*Resource]) error
+	PostApply(*YAMLNode[*Resource]) error
+	OnError(*YAMLNode[*Resource], error)
 }
