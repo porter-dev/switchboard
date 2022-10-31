@@ -11,6 +11,9 @@ type YAMLNodeMetadata struct {
 	Column int
 }
 
+// YAMLNode is intended to be used as a container data structure
+// whenever the underlying data type's internal YAML node or its
+// properties like the line and column need to be known
 type YAMLNode[T any] struct {
 	internalNode *yaml.Node
 	value        *T

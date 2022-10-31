@@ -80,6 +80,26 @@ func validateV2(parsed *types.ParsedPorterYAML) error {
 		return err
 	}
 
+	// before validating apps and addons separately, we first invoke the
+	// dependency checker for both to do some basic validation
+	var allResources []*types.Resource
+
+	for _, a := range parsed.PorterYAML.Apps.GetValue() {
+		allResources = append(allResources, a.GetValue())
+	}
+
+	for _, a := range parsed.PorterYAML.Addons.GetValue() {
+		allResources = append(allResources, a.GetValue())
+	}
+
+	depResolver := newDependencyResolver(allResources)
+
+	err = depResolver.Resolve()
+
+	if err != nil {
+		return fmt.Errorf("error validating porter.yaml: %w", err)
+	}
+
 	err = validateV2Apps(parsed.PorterYAML.Apps.GetValue())
 
 	if err != nil {
