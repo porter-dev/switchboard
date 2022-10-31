@@ -14,15 +14,17 @@ type EnvGroup struct {
 }
 
 type Build struct {
-	Name       *YAMLNode[string]                       `yaml:"name" validate:"required"`
-	Context    *YAMLNode[string]                       `yaml:"context" validate:"dir"`
-	Method     *YAMLNode[string]                       `yaml:"method" validate:"required,oneof=pack docker registry"`
-	Builder    *YAMLNode[string]                       `yaml:"builder" validate:"required_if=Method pack"`
-	Buildpacks []*YAMLNode[string]                     `yaml:"buildpacks"`
-	Dockerfile *YAMLNode[string]                       `yaml:"dockerfile" validate:"required_if=Method docker"`
-	Image      *YAMLNode[string]                       `yaml:"image" validate:"required_if=Method registry"`
-	Env        map[*YAMLNode[string]]*YAMLNode[string] `yaml:"env"`
-	EnvGroups  []*YAMLNode[string]                     `yaml:"env_groups"`
+	Name         *YAMLNode[string]                       `yaml:"name" validate:"required"`
+	Context      *YAMLNode[string]                       `yaml:"context" validate:"dir"`
+	Method       *YAMLNode[string]                       `yaml:"method" validate:"required,oneof=pack docker registry"`
+	Builder      *YAMLNode[string]                       `yaml:"builder" validate:"required_if=Method pack"`
+	Buildpacks   []*YAMLNode[string]                     `yaml:"buildpacks"`
+	Dockerfile   *YAMLNode[string]                       `yaml:"dockerfile" validate:"required_if=Method docker"`
+	Image        *YAMLNode[string]                       `yaml:"image" validate:"required_if=Method registry"`
+	Env          map[*YAMLNode[string]]*YAMLNode[string] `yaml:"env"`
+	EnvGroups    []*YAMLNode[string]                     `yaml:"env_groups"`
+	UseCache     *YAMLNode[bool]                         `yaml:"use_cache"`
+	ImageRepoURI *YAMLNode[string]                       `yaml:"image_repo_uri"`
 }
 
 type Resource struct {

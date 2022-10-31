@@ -53,6 +53,15 @@
             "items": {
               "type": "string"
             }
+          },
+          "use_cache": {
+            "type": "boolean",
+            "description": "Whether to use the pack cache image",
+            "default": false
+          },
+          "image_repo_uri": {
+            "type": "string",
+            "description": "The image repository URI to use for the build"
           }
         },
         "required": ["builder"]
@@ -76,6 +85,10 @@
           "dockerfile": {
             "type": "string",
             "description": "The path to the Dockerfile"
+          },
+          "image_repo_uri": {
+            "type": "string",
+            "description": "The image repository URI to use for the build"
           }
         },
         "required": ["dockerfile"]
