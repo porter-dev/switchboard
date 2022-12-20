@@ -74,7 +74,7 @@ func (w *Worker) Apply(group *types.ResourceGroup, opts *types.ApplyOpts) error 
 		err := hook.WorkerHook.PreApply()
 
 		if err != nil {
-			return fmt.Errorf("error running hook '%s': %v", hook.name, err)
+			return fmt.Errorf("error running PreApply hook '%s': %v", hook.name, err)
 		}
 	}
 
@@ -189,15 +189,13 @@ func (w *Worker) Apply(group *types.ResourceGroup, opts *types.ApplyOpts) error 
 		// get the data to query
 		dataQueries := hook.WorkerHook.DataQueries()
 		dataRes, err := query.PopulateQueries(dataQueries, allOutputData)
-
 		if err != nil {
-			return fmt.Errorf("error running hook '%s': %v", hook.name, err)
+			return fmt.Errorf("error running DataQueries hook '%s': %v", hook.name, err)
 		}
 
 		err = hook.WorkerHook.PostApply(dataRes)
-
 		if err != nil {
-			return fmt.Errorf("error running hook '%s': %v", hook.name, err)
+			return fmt.Errorf("error running PostApply hook '%s': %v", hook.name, err)
 		}
 	}
 
