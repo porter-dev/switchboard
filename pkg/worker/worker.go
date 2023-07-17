@@ -72,8 +72,8 @@ func (w *Worker) Apply(group *types.ResourceGroup, opts *types.ApplyOpts) error 
 	// run any pre-apply hooks
 	for _, hook := range w.hooks {
 		err := hook.WorkerHook.PreApply()
-
 		if err != nil {
+			hook.WorkerHook.OnError(err)
 			return fmt.Errorf("error running PreApply hook '%s': %v", hook.name, err)
 		}
 	}
@@ -91,6 +91,7 @@ func (w *Worker) Apply(group *types.ResourceGroup, opts *types.ApplyOpts) error 
 	execFunc := getExecFunc(sharedDriverOpts)
 
 	resources := make([]*models.Resource, 0)
+	allErrors := make(map[string]error)
 
 	for _, resource := range group.Resources {
 		modelResource := &models.Resource{
@@ -113,29 +114,33 @@ func (w *Worker) Apply(group *types.ResourceGroup, opts *types.ApplyOpts) error 
 		} else if resource.Driver == "" {
 			driver, err = w.driversTable[w.defaultDriver](modelResource, sharedDriverOpts)
 
-			// TODO: append errors, don't exit here
 			if err != nil {
-				return err
+				allErrors[resource.Name] = err
 			}
 		} else if driverFunc, ok := w.driversTable[resource.Driver]; ok {
 			driver, err = driverFunc(modelResource, sharedDriverOpts)
 
-			// TODO: append errors, don't exit here
 			if err != nil {
-				return err
+				allErrors[resource.Name] = err
 			}
 		} else {
-			// TODO: append errors, don't exit here
 			err = fmt.Errorf("no driver found with name '%s'", resource.Driver)
-			return err
+			allErrors[resource.Name] = err
 		}
 
 		lookupTable[resource.Name] = driver
 	}
 
+	if len(allErrors) > 0 {
+		for _, hook := range w.hooks {
+			hook.OnConsolidatedErrors(allErrors)
+		}
+
+		return fmt.Errorf("errors were encountered with one or more resources")
+	}
+
 	depResolver := exec.NewDependencyResolver(resources)
 	err := depResolver.Resolve()
-
 	if err != nil {
 		w.runErrorHooks(err)
 		return err
@@ -145,15 +150,12 @@ func (w *Worker) Apply(group *types.ResourceGroup, opts *types.ApplyOpts) error 
 		APIVersion: group.Version,
 		Resources:  resources,
 	})
-
 	if err != nil {
 		w.runErrorHooks(err)
 		return err
 	}
 
 	exec.Execute(nodes, execFunc)
-
-	allErrors := make(map[string]error)
 
 	for _, node := range nodes {
 		if node.ExecError() != nil {
@@ -175,7 +177,6 @@ func (w *Worker) Apply(group *types.ResourceGroup, opts *types.ApplyOpts) error 
 
 	for _, resource := range group.Resources {
 		resourceOutput, err := lookupTable[resource.Name].Output()
-
 		if err != nil {
 			w.runErrorHooks(err)
 			return err
@@ -217,7 +218,6 @@ func getExecFunc(opts *drivers.SharedDriverOpts) exec.ExecFunc {
 		lookupTable := *opts.DriverLookupTable
 
 		_, err := lookupTable[resource.Name].Apply(resource)
-
 		if err != nil {
 			return err
 		}
