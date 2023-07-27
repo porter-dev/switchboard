@@ -115,8 +115,8 @@ func Execute(nodes []*ExecNode, execFunc ExecFunc) {
 					}
 
 					err := execFunc(nodeP.resource)
+
 					if err != nil {
-						fmt.Printf("error stack: %+v\n", err)
 						nodeP.SetFinishedWithError(err)
 						return
 					}
