@@ -75,7 +75,7 @@ func (w *Worker) Apply(group *types.ResourceGroup, opts *types.ApplyOpts) error 
 	for _, hook := range w.hooks {
 		err := hook.WorkerHook.PreApply()
 		if err != nil {
-			allErrors[hook.name] = fmt.Errorf("error running PreApply hook '%s': %v", hook.name, err)
+			allErrors[hook.name] = fmt.Errorf("error running PreApply: %w", err)
 		}
 	}
 
@@ -199,13 +199,13 @@ func (w *Worker) Apply(group *types.ResourceGroup, opts *types.ApplyOpts) error 
 		dataQueries := hook.WorkerHook.DataQueries()
 		dataRes, err := query.PopulateQueries(dataQueries, allOutputData)
 		if err != nil {
-			allErrors[hook.name] = fmt.Errorf("error running DataQueries hook '%s': %v", hook.name, err)
+			allErrors[hook.name] = fmt.Errorf("error running DataQueries: %w", err)
 			continue
 		}
 
 		err = hook.WorkerHook.PostApply(dataRes)
 		if err != nil {
-			allErrors[hook.name] = fmt.Errorf("error running PostApply hook '%s': %v", hook.name, err)
+			allErrors[hook.name] = fmt.Errorf("error running PostApply hook: %w", err)
 		}
 	}
 
