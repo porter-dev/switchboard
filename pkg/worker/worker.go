@@ -69,13 +69,22 @@ func (w *Worker) RegisterHook(name string, hook WorkerHook) error {
 
 // Apply creates a ResourceGroup
 func (w *Worker) Apply(group *types.ResourceGroup, opts *types.ApplyOpts) error {
+	allErrors := make(map[string]error)
+
 	// run any pre-apply hooks
 	for _, hook := range w.hooks {
 		err := hook.WorkerHook.PreApply()
 		if err != nil {
-			hook.WorkerHook.OnError(err)
-			return fmt.Errorf("error running PreApply hook '%s': %v", hook.name, err)
+			allErrors[hook.name] = fmt.Errorf("error running PreApply: %w", err)
 		}
+	}
+
+	if len(allErrors) > 0 {
+		for _, hook := range w.hooks {
+			hook.OnConsolidatedErrors(allErrors)
+		}
+
+		return fmt.Errorf("errors were encountered with one or more hooks")
 	}
 
 	// create a map of resource names to drivers
@@ -91,7 +100,6 @@ func (w *Worker) Apply(group *types.ResourceGroup, opts *types.ApplyOpts) error 
 	execFunc := getExecFunc(sharedDriverOpts)
 
 	resources := make([]*models.Resource, 0)
-	allErrors := make(map[string]error)
 
 	for _, resource := range group.Resources {
 		modelResource := &models.Resource{
@@ -191,13 +199,22 @@ func (w *Worker) Apply(group *types.ResourceGroup, opts *types.ApplyOpts) error 
 		dataQueries := hook.WorkerHook.DataQueries()
 		dataRes, err := query.PopulateQueries(dataQueries, allOutputData)
 		if err != nil {
-			return fmt.Errorf("error running DataQueries hook '%s': %v", hook.name, err)
+			allErrors[hook.name] = fmt.Errorf("error running DataQueries: %w", err)
+			continue
 		}
 
 		err = hook.WorkerHook.PostApply(dataRes)
 		if err != nil {
-			return fmt.Errorf("error running PostApply hook '%s': %v", hook.name, err)
+			allErrors[hook.name] = fmt.Errorf("error running PostApply hook: %w", err)
 		}
+	}
+
+	if len(allErrors) > 0 {
+		for _, hook := range w.hooks {
+			hook.OnConsolidatedErrors(allErrors)
+		}
+
+		return fmt.Errorf("errors were encountered with one or more hooks")
 	}
 
 	return nil
